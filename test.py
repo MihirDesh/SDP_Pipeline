@@ -376,82 +376,101 @@ result = search_client.create_or_update_index(index)
 print(f' {result.name} created')
 
 
-#getting the mapped and embedded data from the blob
-blob_client = container_client.get_blob_client('llminputdatafinal.json')
-blob_data = blob_client.download_blob()
+# #getting the mapped and embedded data from the blob
+# blob_client = container_client.get_blob_client('llminputdatafinal.json')
+# blob_data = blob_client.download_blob()
 
-json_data = json.loads(blob_data.readall())
+# json_data = json.loads(blob_data.readall())
 
-#uploaded the documents to the vector store
-search_client = SearchClient(endpoint=service_endpoint, index_name=index_name, credential=AzureKeyCredential(admin_key))
-result = search_client.upload_documents(json_data)
-print(f"Uploaded {len(json_data)} documents") 
-
-
+# #uploaded the documents to the vector store
+# search_client = SearchClient(endpoint=service_endpoint, index_name=index_name, credential=AzureKeyCredential(admin_key))
+# result = search_client.upload_documents(json_data)
+# print(f"Uploaded {len(json_data)} documents") 
 
 
-# function to vectorize the prompt
-fields_string = "cust_id_Vector, serious_dlqin2yrs_Vector, revolving_utilization_of_unsecured_lines_Vector, age_Vector, num_time_30_59_days_past_due_not_worse_Vector, debt_ratio_Vector"
 
-# monthly_income_Vector, num_open_credit_lines_and_loans_Vector, num_times_90_days_late_Vector, num_real_estate_loans_or_lines_Vector, num_time_60_89_days_past_due_not_worse_Vector, num_dependents_Vector, credit_score_Vector, credit_history_length_Vector, payment_history_score_Vector, ltv_Vector, total_assets_Vector, total_liabilities_Vector, employment_status_retired_Vector, employment_status_student_Vector, employment_status_unemployed_Vector, education_level_bachelor_Vector, education_level_high_school_Vector, education_level_master_Vector, education_level_phd_Vector, customer_feedback_Vector, customer_service_log_Vector, feedback_sentiment_score_Vector, service_log_sentiment_score_Vector, document_text_Vector"
 
-query = "i want all the details for customer id 1"
+# # function to vectorize the prompt
+# fields_string = "cust_id_Vector, serious_dlqin2yrs_Vector, revolving_utilization_of_unsecured_lines_Vector, age_Vector, num_time_30_59_days_past_due_not_worse_Vector, debt_ratio_Vector"
 
-def get_embedding(query):
-    embedding = client.embeddings.create(input=query, model=azure_openai_em_name).data[0].embedding
-    vector_query = VectorizedQuery(vector=embedding, k_nearest_neighbors=3, fields=fields_string)
-    return vector_query
+# # monthly_income_Vector, num_open_credit_lines_and_loans_Vector, num_times_90_days_late_Vector, num_real_estate_loans_or_lines_Vector, num_time_60_89_days_past_due_not_worse_Vector, num_dependents_Vector, credit_score_Vector, credit_history_length_Vector, payment_history_score_Vector, ltv_Vector, total_assets_Vector, total_liabilities_Vector, employment_status_retired_Vector, employment_status_student_Vector, employment_status_unemployed_Vector, education_level_bachelor_Vector, education_level_high_school_Vector, education_level_master_Vector, education_level_phd_Vector, customer_feedback_Vector, customer_service_log_Vector, feedback_sentiment_score_Vector, service_log_sentiment_score_Vector, document_text_Vector"
 
-content = get_embedding(query)
+# #speech to text part
+# import azure.cognitiveservices.speech as speechsdk
 
-select = [
-    'CustomerID', 
-    'CreditScore',
-    'document_text'
-]
+# query = ""
+# if(True):
+#     speech_key = "8b12a9b9ef7a4eefa4a175aab2e3f115"
+#     speech_region = "eastus"
+#     speech_config = speechsdk.SpeechConfig(subscription="YourSpeechKey", region="YourSpeechRegion")
+#     def from_mic():
+#         speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
+    
+#         speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config)
 
-results = search_client.search(
-    search_text=None,
-    vector_queries=[content],
-    select = select
+#         st.write("speak into microphone")
+#         result = speech_recognizer.recognize_once_async().get()
+#         return result.text
+
+#     query = from_mic()
+
+
+# print(query)
+
+
+# def get_embedding(query):
+#     embedding = client.embeddings.create(input=query, model=azure_openai_em_name).data[0].embedding
+#     vector_query = VectorizedQuery(vector=embedding, k_nearest_neighbors=3, fields=fields_string)
+#     return vector_query
+
+# content = get_embedding(query)
+
+# select = [
+#     'CustomerID', 
+#     'CreditScore',
+#     'document_text'
+# ]
+
+# results = search_client.search(
+#     search_text=None,
+#     vector_queries=[content],
+#     select = select
    
-)
+# )
 
 
 
 
 
-context = next(results)
+# context = next(results)
 
 
 
 
    
-#integrating openAI
+# #integrating openAI
 
 
-api_base = "https://sdp-openai-resource.openai.azure.com/"
-api_key = "e1c07c8cdee94cc9ada9d5ce56b88cef"
-deployment_name = "gpt-4o"
-api_version = '2024-05-01-preview'
+# api_base = "https://sdp-openai-resource.openai.azure.com/"
+# api_key = "e1c07c8cdee94cc9ada9d5ce56b88cef"
+# deployment_name = "gpt-4o"
+# api_version = '2024-05-01-preview'
 
 
-client = AzureOpenAI(
-    api_key = api_key,
-    api_version = api_version,
-    base_url=f"{api_base}/openai/deployments/{deployment_name}"
+# client = AzureOpenAI(
+#     api_key = api_key,
+#     api_version = api_version,
+#     base_url=f"{api_base}/openai/deployments/{deployment_name}"
 
-)
-response = client.chat.completions.create(
-    model=deployment_name,
-    messages=[
-        {"role": "system", "content": "You are a helpful and smart banking officer."},
-        {"role": "user", "content": f"This is the search query: {query}, this is the content:{context}  Make a detailed report taking into consideration all the fields and evaluate how creditworthy the customer is. Point out specific details about positives and negatives and how the customer can improve their credit score in order to make their financial journey smooth, tell whether the user is credit worthy or not."}
-    ],
-    max_tokens=4000
-)
+# )
+# response = client.chat.completions.create(
+#     model=deployment_name,
+#     messages=[
+#         {"role": "system", "content": "You are a helpful and smart banking officer."},
+#         {"role": "user", "content": f"This is the search query: {query}, this is the content:{context}  Make a detailed report taking into consideration all the fields and evaluate how creditworthy the customer is. Point out specific details about positives and negatives and how the customer can improve their credit score in order to make their financial journey smooth, tell whether the user is credit worthy or not."}
+#     ],
+#     max_tokens=4000
+# )
 
-print(response.choices[0].message.content)
+# st.write(response.choices[0].message.content)
 
-
-#speech to text part
