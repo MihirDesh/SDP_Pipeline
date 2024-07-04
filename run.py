@@ -112,8 +112,8 @@ else:
         input = st.text_input("Enter your query")
         text_bool = st.button("CHAT WITH COPILOT")
 
-if(text_bool):
-    query = input
+        if(text_bool):
+            query = input
 
    
 
