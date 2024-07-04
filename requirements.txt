@@ -5,8 +5,8 @@ azure-search-documents
 azure-cognitiveservices-speech
 openai
 azure-search-documents
-
-
+azure-storage-blob
+streamlit
 
 
 
