@@ -74,9 +74,9 @@ fields_string = "cust_id_Vector, serious_dlqin2yrs_Vector, revolving_utilization
 with col1:
 
     speech_bool = st.button("TALK TO COPILOT")
-with col2:
 
-    text_bool = st.button("CHAT WITH COPILOT")
+
+    
     
      
 
@@ -107,6 +107,13 @@ if(speech_bool):
 
     query = from_mic()
 
+else:
+    with col2:
+        input = st.text_input("Enter your query")
+        text_bool = st.button("CHAT WITH COPILOT")
+
+if(text_bool):
+    query = input
 
    
 
