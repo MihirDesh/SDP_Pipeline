@@ -1,5 +1,4 @@
 from azure.storage.blob import BlobServiceClient
-from azure.ai.formrecognizer import DocumentAnalysisClient
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents import SearchClient
@@ -12,20 +11,8 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
 from langchain.chat_models import AzureChatOpenAI
 
-from azure.search.documents.indexes.models import (
-    SearchFieldDataType,
-    SearchableField,
-    SearchField,
-    VectorSearch,
-    HnswAlgorithmConfiguration,
-    VectorSearchProfile,
-    SemanticConfiguration,
-    SemanticPrioritizedFields,
-    SemanticField,
-    SemanticSearch,
-    SearchIndex
-)
-import json
+
+
 
 st.set_page_config(layout="wide")
 st.header("CREDISHIELD: THE CREDIT WORTHINESS COPILOT")
@@ -40,17 +27,24 @@ if 'follow_up_response' not in st.session_state:
 
 col1, col2 = st.columns(2)
 
-# ALL THE NECESSARY DATA AND KEYS AND NAMES AND ENDPOINTS
-index_name = "customer-index9"
-service_endpoint = "https://ai-search-fraud.search.windows.net"
-admin_key = "DOnPZ8CHtXlQuFoL5EMBrfTSHFR3BeXcEYty20fjdmAzSeDHIuXZ"
-search_client = SearchIndexClient(service_endpoint, AzureKeyCredential(admin_key))
+# ALL THE NECESSARY DATA AND KEYS AND NAMES AND ENDPOINTS......
+
+#Azure blob storage keys and endpoints:
 AZURE_STORAGE_ACCOUNT_NAME = 'frauddetect1578932446'
 AZURE_STORAGE_ACCOUNT_KEY = 'bJEfK0Kj1EaYaKji0jDV7AvgPBUgfPuCwIWtM0R5uuRBQUb07PSyp7PV8mMCwBSOtIVS2+93lq68+AStTZx7zA=='
 CONTAINER_NAME = 'unstructureddata'
 blob_service_client = BlobServiceClient(account_url=f'https://{AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net', credential=AZURE_STORAGE_ACCOUNT_KEY)
 container_client = blob_service_client.get_container_client(container=CONTAINER_NAME)
 blob_list = container_client.list_blobs()
+
+#AZURE AI SEARCH KEYS AND ENDPOINT
+index_name = "customer-index9"
+service_endpoint = "https://ai-search-fraud.search.windows.net"
+admin_key = "DOnPZ8CHtXlQuFoL5EMBrfTSHFR3BeXcEYty20fjdmAzSeDHIuXZ"
+search_client = SearchIndexClient(service_endpoint, AzureKeyCredential(admin_key))
+
+
+#TEXT-EMBEDDING-ADA-002 KEYS AND ENDPOINTS
 azure_openai_endpoint = "https://SDP-OpenAI-Resource.openai.azure.com/openai/deployments/text-embedding-ada-002-2/embeddings?api-version=2023-05-15"
 azure_openai_key = "e1c07c8cdee94cc9ada9d5ce56b88cef"
 azure_openai_em_name = "text-embedding-ada-002" 
@@ -65,6 +59,9 @@ client = AzureOpenAI(
     api_key=azure_openai_key,
 )
 
+
+
+#MAIN CODE
 search_client = SearchClient(endpoint=service_endpoint, index_name=index_name, credential=AzureKeyCredential(admin_key))
 fields_string = "cust_id_Vector, serious_dlqin2yrs_Vector, revolving_utilization_of_unsecured_lines_Vector, age_Vector, num_time_30_59_days_past_due_not_worse_Vector, debt_ratio_Vector"
 
