@@ -1,14 +1,14 @@
 azure-search-documents==11.6.0b4
 azure-storage-blob
 azure-ai-formrecognizer
-azure-search-documents
 azure-cognitiveservices-speech
 openai
-azure-search-documents
 azure-storage-blob
 streamlit
+langchain
 
 
 
-#to activate the venv environment, run this:
+
+#to activate the venv environment, run this if you are using Windows Powershell:
 #.venv\Scripts\Activate.ps1
