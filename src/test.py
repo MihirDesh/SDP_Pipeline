@@ -376,16 +376,16 @@ result = search_client.create_or_update_index(index)
 print(f' {result.name} created')
 
 
-# #getting the mapped and embedded data from the blob
-# blob_client = container_client.get_blob_client('llminputdatafinal.json')
-# blob_data = blob_client.download_blob()
+#getting the mapped and embedded data from the blob
+blob_client = container_client.get_blob_client('llminputdatafinal.json')
+blob_data = blob_client.download_blob()
 
-# json_data = json.loads(blob_data.readall())
+json_data = json.loads(blob_data.readall())
 
-# #uploaded the documents to the vector store
-# search_client = SearchClient(endpoint=service_endpoint, index_name=index_name, credential=AzureKeyCredential(admin_key))
-# result = search_client.upload_documents(json_data)
-# print(f"Uploaded {len(json_data)} documents") 
+#uploaded the documents to the vector store
+search_client = SearchClient(endpoint=service_endpoint, index_name=index_name, credential=AzureKeyCredential(admin_key))
+result = search_client.upload_documents(json_data)
+print(f"Uploaded {len(json_data)} documents") 
 
 
 
