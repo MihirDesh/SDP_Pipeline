@@ -24,7 +24,7 @@ from azure.search.documents.indexes.models import (
 )
 import json
 
-#openai text embedding model ADA
+#openai text embedding model ADA-002
 
 azure_openai_endpoint = "https://SDP-OpenAI-Resource.openai.azure.com/openai/deployments/text-embedding-ada-002-2/embeddings?api-version=2023-05-15"
 azure_openai_key = "e1c07c8cdee94cc9ada9d5ce56b88cef"
