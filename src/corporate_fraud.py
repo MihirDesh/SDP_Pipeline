@@ -4,7 +4,9 @@ from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents import SearchClient
 from azure.search.documents.models import VectorizedQuery
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
 from azure.core.credentials import AzureKeyCredential
 from openai import AzureOpenAI
 from azure.search.documents.indexes.models import (
@@ -22,33 +24,25 @@ from azure.search.documents.indexes.models import (
 )
 import json
 
-# OpenAI text embedding model ADA
-azure_openai_endpoint = "https://SDP-OpenAI-Resource.openai.azure.com/openai/deployments/text-embedding-ada-002-2/embeddings?api-version=2023-05-15"
-azure_openai_key = "e1c07c8cdee94cc9ada9d5ce56b88cef"
-azure_openai_em_name = "text-embedding-ada-002" 
-azure_openai_version_em = "2023-05-15"
-azure_openai_model_dep_name_em = "text-embedding-ada-002-2"
+
 
 # CLIENT FOR EMBEDDING
 client = AzureOpenAI(
-    azure_deployment=azure_openai_model_dep_name_em,
-    api_version=azure_openai_version_em,
-    azure_endpoint=azure_openai_endpoint,
-    api_key=azure_openai_key,
+    azure_deployment=os.getenv("azure_openai_model_dep_name_em"),
+    api_version=os.getenv("azure_openai_version_em"),
+    azure_endpoint=os.getenv("azure_openai_endpoint"),
+    api_key=os.getenv("azure_openai_key"),
 )
 
 # Getting data from blob storage
-AZURE_STORAGE_ACCOUNT_NAME = 'frauddetect1578932446'
-AZURE_STORAGE_ACCOUNT_KEY = 'bJEfK0Kj1EaYaKji0jDV7AvgPBUgfPuCwIWtM0R5uuRBQUb07PSyp7PV8mMCwBSOtIVS2+93lq68+AStTZx7zA=='
-CONTAINER_NAME = 'corporatefraud'
-blob_service_client = BlobServiceClient(account_url=f'https://{AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net', credential=AZURE_STORAGE_ACCOUNT_KEY)
-container_client = blob_service_client.get_container_client(container=CONTAINER_NAME)
+
+blob_service_client = BlobServiceClient(account_url=f'https://{os.getenv("AZURE_STORAGE_ACCOUNT_NAME")}.blob.core.windows.net', credential=os.getenv("AZURE_STORAGE_ACCOUNT_KEY"))
+container_client = blob_service_client.get_container_client(container=os.getenv("CONTAINER_NAME_FRAUD"))
 blob_list = container_client.list_blobs()
 
 # Creating document intelligence instance
-doc_endpoint = "https://frauddocumentintelligence.cognitiveservices.azure.com/"
-doc_apikey = "73ad3d41060f40f9ab4fe5199a9d8b00"
-document_client = DocumentAnalysisClient(doc_endpoint, AzureKeyCredential(doc_apikey))
+
+document_client = DocumentAnalysisClient(os.getenv("doc_endpoint"), AzureKeyCredential(os.getenv("doc_apikey")))
 
 # Creating a list of documents
 document_list = []
@@ -81,10 +75,9 @@ for i in range(1,11,1):
                     customer['document_text'] += document
 
 
-index_name = "corporate-index4"
-service_endpoint = "https://ai-search-fraud.search.windows.net"
-admin_key = "DOnPZ8CHtXlQuFoL5EMBrfTSHFR3BeXcEYty20fjdmAzSeDHIuXZ"
-search_client = SearchIndexClient(service_endpoint,AzureKeyCredential(admin_key))
+index_name_fraud = os.getenv("index_name_fraud")
+
+search_client = SearchIndexClient(os.getenv("service_endpoint"),AzureKeyCredential(os.getenv("admin_key")))
 
 fields = [
     SearchableField(name="CompanyID", type=SearchFieldDataType.String, key=True, sortable=True, filterable=True, facetable=True),
@@ -124,37 +117,37 @@ merchant_id = [str(dataitem['MerchantID']) for dataitem in data]
 document_texts = [str(dataitem['document_text']) for dataitem in data]
 
 # Creating embeddings
-company_id_response = client.embeddings.create(input=company_id, model=azure_openai_em_name)
+company_id_response = client.embeddings.create(input=company_id, model=os.getenv("azure_openai_em_name"))
 company_id_embeddings = [item.embedding for item in company_id_response.data]
 
-date_response = client.embeddings.create(input=date_new, model=azure_openai_em_name)
+date_response = client.embeddings.create(input=date_new, model=os.getenv("azure_openai_em_name"))
 date_embeddings = [item.embedding for item in date_response.data]
 
-debit_credit_response = client.embeddings.create(input=debit_credit, model=azure_openai_em_name)
+debit_credit_response = client.embeddings.create(input=debit_credit, model=os.getenv("azure_openai_em_name"))
 debit_credit_embeddings = [item.embedding for item in debit_credit_response.data]
 
-amount_response = client.embeddings.create(input=amount, model=azure_openai_em_name)
+amount_response = client.embeddings.create(input=amount, model=os.getenv("azure_openai_em_name"))
 amount_embeddings = [item.embedding for item in amount_response.data]
 
-company_account_response = client.embeddings.create(input=company_account, model=azure_openai_em_name)
+company_account_response = client.embeddings.create(input=company_account, model=os.getenv("azure_openai_em_name"))
 company_account_embeddings = [item.embedding for item in company_account_response.data]
 
-transaction_description_response = client.embeddings.create(input=transaction_description, model=azure_openai_em_name)
+transaction_description_response = client.embeddings.create(input=transaction_description, model=os.getenv("azure_openai_em_name"))
 transaction_description_embeddings = [item.embedding for item in transaction_description_response.data]
 
-final_balance_response = client.embeddings.create(input=final_balance, model=azure_openai_em_name)
+final_balance_response = client.embeddings.create(input=final_balance, model=os.getenv("azure_openai_em_name"))
 final_balance_embeddings = [item.embedding for item in final_balance_response.data]
 
-transaction_id_response = client.embeddings.create(input=transaction_id, model=azure_openai_em_name)
+transaction_id_response = client.embeddings.create(input=transaction_id, model=os.getenv("azure_openai_em_name"))
 transaction_id_embeddings = [item.embedding for item in transaction_id_response.data]
 
-merchant_firm_name_response = client.embeddings.create(input=merchant_firm_name, model=azure_openai_em_name)
+merchant_firm_name_response = client.embeddings.create(input=merchant_firm_name, model=os.getenv("azure_openai_em_name"))
 merchant_firm_name_embeddings = [item.embedding for item in merchant_firm_name_response.data]
 
-merchant_id_response = client.embeddings.create(input=merchant_id, model=azure_openai_em_name)
+merchant_id_response = client.embeddings.create(input=merchant_id, model=os.getenv("azure_openai_em_name"))
 merchant_id_embeddings = [item.embedding for item in merchant_id_response.data]
 
-document_texts_response = client.embeddings.create(input=document_texts, model=azure_openai_em_name)
+document_texts_response = client.embeddings.create(input=document_texts, model=os.getenv("azure_openai_em_name"))
 document_texts_embeddings = [item.embedding for item in document_texts_response.data]
 
 # Adding the vectors to each data item in the data
@@ -173,12 +166,12 @@ for i, dataitem in enumerate(data):
     
 #indexing process
 new_blob_name = 'llminput.json'
-new_blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=new_blob_name)
+new_blob_client = blob_service_client.get_blob_client(container=os.getenv("CONTAINER_NAME_FRAUD"), blob=new_blob_name)
 
 # Open the local file and upload its contents
 data_string = json.dumps(data)
 new_blob_client.upload_blob(data_string, overwrite=True)
-print(f"File {new_blob_name} uplaoded to Azure Blob Storage in container {CONTAINER_NAME}")
+print(f"File {new_blob_name} uplaoded to Azure Blob Storage in container")
 
 #defining the vector search algorithm
 vector_search = VectorSearch(
@@ -196,7 +189,7 @@ vector_search = VectorSearch(
 )
 
 # Create the search index and defining the algorithm we previously created
-index = SearchIndex(name=index_name, fields=fields, vector_search=vector_search)
+index = SearchIndex(name=index_name_fraud, fields=fields, vector_search=vector_search)
 result = search_client.create_or_update_index(index)
 print(f'{result.name} created')
 
@@ -207,7 +200,7 @@ blob_data = blob_client.download_blob()
 json_data = json.loads(blob_data.readall())
 
 # Upload the documents to the vector store
-search_client = SearchClient(endpoint=service_endpoint, index_name=index_name, credential=AzureKeyCredential(admin_key))
+search_client = SearchClient(endpoint=os.getenv("service_endpoint"), index_name=index_name_fraud, credential=AzureKeyCredential(os.getenv("admin_key")))
 results = search_client.upload_documents(json_data)
 print(f"Uploaded {len(json_data)} documents")
 
@@ -217,7 +210,7 @@ field_string = "company_id_Vector, final_balance_Vector, transaction_id_Vector, 
 query = "Provide all the details of CompanyID: 1 transactions"
 
 def get_embedding(query):
-    embedding = client.embeddings.create(input=query, model=azure_openai_em_name).data[0].embedding
+    embedding = client.embeddings.create(input=query, model=os.getenv("azure_openai_em_name")).data[0].embedding
     vector_query = VectorizedQuery(vector=embedding, k_nearest_neighbors=3, fields=field_string)
     return vector_query
 
@@ -252,19 +245,16 @@ except StopIteration:
 
 if context:
     # Integrating OpenAI
-    api_base = "https://sdp-openai-resource.openai.azure.com/"
-    api_key = "e1c07c8cdee94cc9ada9d5ce56b88cef"
-    deployment_name = "gpt-4o"
-    api_version = '2024-05-01-preview'
+   
 
     client = AzureOpenAI(
-        api_key = api_key,
-        api_version = api_version,
-        base_url=f"{api_base}/openai/deployments/{deployment_name}"
+        api_key = os.getenv("api_key"),
+        api_version = os.getenv("api_version"),
+        base_url = os.getenv("azure_endpoint")
     )
 
     response = client.chat.completions.create(
-        model=deployment_name,
+        model=os.getenv("deployment_name"),
         messages=[
             {"role": "system", "content": "You are an expert financial specializing in corporate fraud detection."},
             {"role": "user", "content": f"This is the search query: {query}, this is the content: {context}. Based on the transaction data and company information provide a detailed report on the potential fraud indicators and overall financial health. Also show the document text not the vector, just the text in that object. give a detailed explanation of document text."}

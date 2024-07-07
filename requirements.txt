@@ -7,7 +7,7 @@ azure-storage-blob
 streamlit
 langchain
 langchain_community 
-
+python-dotenv
 
 
 #to activate the venv environment, run this if you are using Windows Powershell:

@@ -5,7 +5,9 @@ from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents import SearchClient
 from azure.search.documents.models import VectorizedQuery
 import azure.cognitiveservices.speech as speechsdk
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
 from azure.core.credentials import AzureKeyCredential
 from openai import AzureOpenAI
 from azure.search.documents.indexes.models import (
@@ -23,39 +25,32 @@ from azure.search.documents.indexes.models import (
     SearchIndex
 )
 import json
+#loading the environment variables
 
-#openai text embedding model ADA-002
 
-azure_openai_endpoint = "https://SDP-OpenAI-Resource.openai.azure.com/openai/deployments/text-embedding-ada-002-2/embeddings?api-version=2023-05-15"
-azure_openai_key = "e1c07c8cdee94cc9ada9d5ce56b88cef"
-azure_openai_em_name = "text-embedding-ada-002" 
-azure_openai_version_em = "2023-05-15"
-azure_openai_model_dep_name_em = "text-embedding-ada-002-2"
+
 
 #CLIENT FOR EMBEDDING
 client = AzureOpenAI(
-    azure_deployment=azure_openai_model_dep_name_em,
-    api_version=azure_openai_version_em,
-    azure_endpoint=azure_openai_endpoint,
-    api_key=azure_openai_key,
+    azure_deployment= os.getenv("azure_openai_model_dep_name_em"),
+    api_version=os.getenv("azure_openai_version_em"),
+    azure_endpoint=os.getenv("ADA_ENDPOINT"),
+    api_key=os.getenv("azure_openai_key"),
    
 )
 
 #getting data from blob storage
 
-AZURE_STORAGE_ACCOUNT_NAME = 'frauddetect1578932446'
-AZURE_STORAGE_ACCOUNT_KEY = 'bJEfK0Kj1EaYaKji0jDV7AvgPBUgfPuCwIWtM0R5uuRBQUb07PSyp7PV8mMCwBSOtIVS2+93lq68+AStTZx7zA=='
-CONTAINER_NAME = 'unstructureddata'
-blob_service_client = BlobServiceClient(account_url=f'https://{AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net', credential=AZURE_STORAGE_ACCOUNT_KEY)
-container_client = blob_service_client.get_container_client(container=CONTAINER_NAME)
+
+blob_service_client = BlobServiceClient(account_url=f'https://{os.getenv("AZURE_STORAGE_ACCOUNT_NAME")}.blob.core.windows.net', credential=os.getenv("AZURE_STORAGE_ACCOUNT_KEY"))
+container_client = blob_service_client.get_container_client(container=os.getenv("CONTAINER_NAME"))
 blob_list = container_client.list_blobs()
 
 
 
 #creating document intelligence instance
-doc_endpoint = "https://frauddocumentintelligence.cognitiveservices.azure.com/"
-doc_apikey = "73ad3d41060f40f9ab4fe5199a9d8b00"
-document_client = DocumentAnalysisClient(doc_endpoint,AzureKeyCredential(doc_apikey))
+
+document_client = DocumentAnalysisClient(os.getenv("doc_endpoint"),AzureKeyCredential(os.getenv("doc_apikey")))
 
 #creating a list of documents.
 
@@ -108,10 +103,8 @@ for i in range(1,11,1):
 #creating indexes
 
 
-index_name = "customer-index9"
-service_endpoint = "https://ai-search-fraud.search.windows.net"
-admin_key = "DOnPZ8CHtXlQuFoL5EMBrfTSHFR3BeXcEYty20fjdmAzSeDHIuXZ"
-search_client = SearchIndexClient(service_endpoint,AzureKeyCredential(admin_key))
+index_name = os.getenv("index_name")
+search_client = SearchIndexClient(os.getenv("service_endpoint"),AzureKeyCredential(os.getenv("admin_key")))
 
 
 
@@ -213,94 +206,94 @@ document_texts = [str(dataitem['document_text']) for dataitem in data]
 
 #creating the embeddings here
 
-cust_ids_response = client.embeddings.create(input=cust_ids, model=azure_openai_em_name)
+cust_ids_response = client.embeddings.create(input=cust_ids, model=os.getenv("azure_openai_em_name"))
 cust_id_embeddings = [item.embedding for item in cust_ids_response.data]
 
-serious_dlqin2yrs_response = client.embeddings.create(input=serious_dlqin2yrs, model=azure_openai_em_name)
+serious_dlqin2yrs_response = client.embeddings.create(input=serious_dlqin2yrs, model=os.getenv("azure_openai_em_name"))
 serious_dlqin2yrs_embeddings = [item.embedding for item in serious_dlqin2yrs_response.data]
 
-revolving_utilization_of_unsecured_lines_response = client.embeddings.create(input=revolving_utilization_of_unsecured_lines, model=azure_openai_em_name)
+revolving_utilization_of_unsecured_lines_response = client.embeddings.create(input=revolving_utilization_of_unsecured_lines, model=os.getenv("azure_openai_em_name"))
 revolving_utilization_of_unsecured_lines_embeddings = [item.embedding for item in revolving_utilization_of_unsecured_lines_response.data]
 
-ages_response = client.embeddings.create(input=ages, model=azure_openai_em_name)
+ages_response = client.embeddings.create(input=ages, model=os.getenv("azure_openai_em_name"))
 ages_embeddings = [item.embedding for item in ages_response.data]
 
-num_time_30_59_days_past_due_not_worse_response = client.embeddings.create(input=num_time_30_59_days_past_due_not_worse, model=azure_openai_em_name)
+num_time_30_59_days_past_due_not_worse_response = client.embeddings.create(input=num_time_30_59_days_past_due_not_worse, model=os.getenv("azure_openai_em_name"))
 num_time_30_59_days_past_due_not_worse_embeddings = [item.embedding for item in num_time_30_59_days_past_due_not_worse_response.data]
 
-debt_ratios_response = client.embeddings.create(input=debt_ratios, model=azure_openai_em_name)
+debt_ratios_response = client.embeddings.create(input=debt_ratios, model=os.getenv("azure_openai_em_name"))
 debt_ratios_embeddings = [item.embedding for item in debt_ratios_response.data]
 
-monthly_incomes_response = client.embeddings.create(input=monthly_incomes, model=azure_openai_em_name)
+monthly_incomes_response = client.embeddings.create(input=monthly_incomes, model=os.getenv("azure_openai_em_name"))
 monthly_incomes_embeddings = [item.embedding for item in monthly_incomes_response.data]
 
-num_open_credit_lines_and_loans_response = client.embeddings.create(input=num_open_credit_lines_and_loans, model=azure_openai_em_name)
+num_open_credit_lines_and_loans_response = client.embeddings.create(input=num_open_credit_lines_and_loans, model=os.getenv("azure_openai_em_name"))
 num_open_credit_lines_and_loans_embeddings = [item.embedding for item in num_open_credit_lines_and_loans_response.data]
 
-num_times_90_days_late_response = client.embeddings.create(input=num_times_90_days_late, model=azure_openai_em_name)
+num_times_90_days_late_response = client.embeddings.create(input=num_times_90_days_late, model=os.getenv("azure_openai_em_name"))
 num_times_90_days_late_embeddings = [item.embedding for item in num_times_90_days_late_response.data]
 
-num_real_estate_loans_or_lines_response = client.embeddings.create(input=num_real_estate_loans_or_lines, model=azure_openai_em_name)
+num_real_estate_loans_or_lines_response = client.embeddings.create(input=num_real_estate_loans_or_lines, model=os.getenv("azure_openai_em_name"))
 num_real_estate_loans_or_lines_embeddings = [item.embedding for item in num_real_estate_loans_or_lines_response.data]
 
-num_time_60_89_days_past_due_not_worse_response = client.embeddings.create(input=num_time_60_89_days_past_due_not_worse, model=azure_openai_em_name)
+num_time_60_89_days_past_due_not_worse_response = client.embeddings.create(input=num_time_60_89_days_past_due_not_worse, model=os.getenv("azure_openai_em_name"))
 num_time_60_89_days_past_due_not_worse_embeddings = [item.embedding for item in num_time_60_89_days_past_due_not_worse_response.data]
 
-num_dependents_response = client.embeddings.create(input=num_dependents, model=azure_openai_em_name)
+num_dependents_response = client.embeddings.create(input=num_dependents, model=os.getenv("azure_openai_em_name"))
 num_dependents_embeddings = [item.embedding for item in num_dependents_response.data]
 
-credit_scores_response = client.embeddings.create(input=credit_scores, model=azure_openai_em_name)
+credit_scores_response = client.embeddings.create(input=credit_scores, model=os.getenv("azure_openai_em_name"))
 credit_scores_embeddings = [item.embedding for item in credit_scores_response.data]
 
-credit_history_lengths_response = client.embeddings.create(input=credit_history_lengths, model=azure_openai_em_name)
+credit_history_lengths_response = client.embeddings.create(input=credit_history_lengths, model=os.getenv("azure_openai_em_name"))
 credit_history_lengths_embeddings = [item.embedding for item in credit_history_lengths_response.data]
 
-payment_history_scores_response = client.embeddings.create(input=payment_history_scores, model=azure_openai_em_name)
+payment_history_scores_response = client.embeddings.create(input=payment_history_scores, model=os.getenv("azure_openai_em_name"))
 payment_history_scores_embeddings = [item.embedding for item in payment_history_scores_response.data]
 
-ltvs_response = client.embeddings.create(input=ltvs, model=azure_openai_em_name)
+ltvs_response = client.embeddings.create(input=ltvs, model=os.getenv("azure_openai_em_name"))
 ltvs_embeddings = [item.embedding for item in ltvs_response.data]
 
-total_assets_response = client.embeddings.create(input=total_assets, model=azure_openai_em_name)
+total_assets_response = client.embeddings.create(input=total_assets, model=os.getenv("azure_openai_em_name"))
 total_assets_embeddings = [item.embedding for item in total_assets_response.data]
 
-total_liabilities_response = client.embeddings.create(input=total_liabilities, model=azure_openai_em_name)
+total_liabilities_response = client.embeddings.create(input=total_liabilities, model=os.getenv("azure_openai_em_name"))
 total_liabilities_embeddings = [item.embedding for item in total_liabilities_response.data]
 
-employment_status_retired_response = client.embeddings.create(input=employment_status_retired, model=azure_openai_em_name)
+employment_status_retired_response = client.embeddings.create(input=employment_status_retired, model=os.getenv("azure_openai_em_name"))
 employment_status_retired_embeddings = [item.embedding for item in employment_status_retired_response.data]
 
-employment_status_student_response = client.embeddings.create(input=employment_status_student, model=azure_openai_em_name)
+employment_status_student_response = client.embeddings.create(input=employment_status_student, model=os.getenv("azure_openai_em_name"))
 employment_status_student_embeddings = [item.embedding for item in employment_status_student_response.data]
 
-employment_status_unemployed_response = client.embeddings.create(input=employment_status_unemployed, model=azure_openai_em_name)
+employment_status_unemployed_response = client.embeddings.create(input=employment_status_unemployed, model=os.getenv("azure_openai_em_name"))
 employment_status_unemployed_embeddings = [item.embedding for item in employment_status_unemployed_response.data]
 
-education_level_bachelor_response = client.embeddings.create(input=education_level_bachelor, model=azure_openai_em_name)
+education_level_bachelor_response = client.embeddings.create(input=education_level_bachelor, model=os.getenv("azure_openai_em_name"))
 education_level_bachelor_embeddings = [item.embedding for item in education_level_bachelor_response.data]
 
-education_level_high_school_response = client.embeddings.create(input=education_level_high_school, model=azure_openai_em_name)
+education_level_high_school_response = client.embeddings.create(input=education_level_high_school, model=os.getenv("azure_openai_em_name"))
 education_level_high_school_embeddings = [item.embedding for item in education_level_high_school_response.data]
 
-education_level_master_response = client.embeddings.create(input=education_level_master, model=azure_openai_em_name)
+education_level_master_response = client.embeddings.create(input=education_level_master, model=os.getenv("azure_openai_em_name"))
 education_level_master_embeddings = [item.embedding for item in education_level_master_response.data]
 
-education_level_phd_response = client.embeddings.create(input=education_level_phd, model=azure_openai_em_name)
+education_level_phd_response = client.embeddings.create(input=education_level_phd, model=os.getenv("azure_openai_em_name"))
 education_level_phd_embeddings = [item.embedding for item in education_level_phd_response.data]
 
-customer_feedback_response = client.embeddings.create(input=customer_feedback, model=azure_openai_em_name)
+customer_feedback_response = client.embeddings.create(input=customer_feedback, model=os.getenv("azure_openai_em_name"))
 customer_feedback_embeddings = [item.embedding for item in customer_feedback_response.data]
 
-customer_service_log_response = client.embeddings.create(input=customer_service_log, model=azure_openai_em_name)
+customer_service_log_response = client.embeddings.create(input=customer_service_log, model=os.getenv("azure_openai_em_name"))
 customer_service_log_embeddings = [item.embedding for item in customer_service_log_response.data]
 
-feedback_sentiment_score_response = client.embeddings.create(input=feedback_sentiment_score, model=azure_openai_em_name)
+feedback_sentiment_score_response = client.embeddings.create(input=feedback_sentiment_score, model=os.getenv("azure_openai_em_name"))
 feedback_sentiment_score_embeddings = [item.embedding for item in feedback_sentiment_score_response.data]
 
-service_log_sentiment_score_response = client.embeddings.create(input=service_log_sentiment_score, model=azure_openai_em_name)
+service_log_sentiment_score_response = client.embeddings.create(input=service_log_sentiment_score, model=os.getenv("azure_openai_em_name"))
 service_log_sentiment_score_embeddings = [item.embedding for item in service_log_sentiment_score_response.data]
 
-document_texts_response = client.embeddings.create(input=document_texts, model=azure_openai_em_name)
+document_texts_response = client.embeddings.create(input=document_texts, model=os.getenv("azure_openai_em_name"))
 document_texts_embeddings = [item.embedding for item in document_texts_response.data]
 
 #adding the vectors to each data item in the data
@@ -343,13 +336,13 @@ for i, dataitem in enumerate(data):
 
 #indexing process
 new_blob_name = 'llminputdatafinal.json'
-new_blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=new_blob_name)
+new_blob_client = blob_service_client.get_blob_client(container=os.getenv("CONTAINER_NAME"), blob=new_blob_name)
 
 # Open the local file and upload its contents
 data_string = json.dumps(data)
 new_blob_client.upload_blob(data_string, overwrite=True)
 
-print(f"File {new_blob_name} uploaded to Azure Blob Storage in container {CONTAINER_NAME}")
+print(f"File {new_blob_name} uploaded to Azure Blob Storage in container")
 
 #defining the vector search algorithm
 vector_search = VectorSearch(
@@ -383,7 +376,7 @@ blob_data = blob_client.download_blob()
 json_data = json.loads(blob_data.readall())
 
 #uploaded the documents to the vector store
-search_client = SearchClient(endpoint=service_endpoint, index_name=index_name, credential=AzureKeyCredential(admin_key))
+search_client = SearchClient(endpoint=os.getenv("service_endpoint"), index_name=index_name, credential=AzureKeyCredential(os.getenv("admin_key")))
 result = search_client.upload_documents(json_data)
 print(f"Uploaded {len(json_data)} documents") 
 
@@ -419,7 +412,7 @@ print(f"Uploaded {len(json_data)} documents")
 
 
 # def get_embedding(query):
-#     embedding = client.embeddings.create(input=query, model=azure_openai_em_name).data[0].embedding
+#     embedding = client.embeddings.create(input=query, model=os.getenv("azure_openai_em_name")).data[0].embedding
 #     vector_query = VectorizedQuery(vector=embedding, k_nearest_neighbors=3, fields=fields_string)
 #     return vector_query
 
