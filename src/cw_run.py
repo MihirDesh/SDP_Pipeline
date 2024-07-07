@@ -4,15 +4,15 @@ from azure.storage.blob import BlobServiceClient
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents import SearchClient
-from azure.search.documents.models import VectorizedQuery
-import azure.cognitiveservices.speech as speechsdk
 import streamlit as st
 from azure.core.credentials import AzureKeyCredential
 from openai import AzureOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
-from langchain.chat_models import AzureChatOpenAI
-
+from helpers.llm_helpers.gpt4o import gpt4o
+from helpers.llm_helpers.gpt4oinit import createlangchainllm
+from helpers.vector_helpers.getembedding import get_embedding
+from helpers.input_helpers.speech import from_mic
 
 load_dotenv()
 
@@ -61,12 +61,7 @@ fields_string = "cust_id_Vector, serious_dlqin2yrs_Vector, revolving_utilization
 # Initialize Langchain components
 if st.session_state.conversation is None:
     memory = ConversationBufferMemory()
-    llm = AzureChatOpenAI(
-        azure_endpoint=os.getenv("azure_endpoint"),
-        api_key=os.getenv("api_key"),
-        api_version=os.getenv("api_version"),
-        deployment_name=os.getenv("deployment_name"),
-    )
+    llm = createlangchainllm()
     st.session_state.conversation = ConversationChain(
         llm=llm,
         memory=memory,
@@ -79,14 +74,7 @@ with col1:
 query = ""
 
 if speech_bool:
-    # Your existing speech-to-text code
-   
-    speech_config = speechsdk.SpeechConfig(subscription=os.getenv("speech_key"), region=os.getenv("speech_region"))
-    def from_mic():
-        speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config)
-        st.write("Listening.......")
-        result = speech_recognizer.recognize_once_async().get()
-        return result.text
+    
 
     query = from_mic()
 else:
@@ -99,12 +87,8 @@ else:
 
 if query:
     st.write(f"Your query is: {query}")
-    def get_embedding(query):
-        embedding = client.embeddings.create(input=query, model=os.getenv("azure_openai_em_name")).data[0].embedding
-        vector_query = VectorizedQuery(vector=embedding, k_nearest_neighbors=3, fields=fields_string)
-        return vector_query
-
-    content = get_embedding(query)
+   
+    content = get_embedding(query,fields_string,client)
 
     select = [
         'CustomerID', 
@@ -123,29 +107,21 @@ if query:
     with st.spinner("ANALYSING THE DATA AND GENERATING REPORT"):
        
       
+        prompt = f"This is the search query: {query}, this is the content:{str(context)}  Make a detailed report taking into consideration all the fields and evaluate how creditworthy the customer is. Point out specific details about positives and negatives and how the customer can improve their credit score in order to make their financial journey smooth, tell whether the user is credit worthy or not."
         
-        
-        openai_client = AzureOpenAI(
-            api_key=os.getenv("api_key"),
-            api_version=os.getenv("api_version"),
-            azure_endpoint=os.getenv("azure_endpoint")
-           
-        )   
+        response = gpt4o(prompt,4000,"banking client")
 
-        response = openai_client.chat.completions.create(
-            model=os.getenv("deployment_name"),
-            messages=[
-                {"role": "system", "content": "You are a helpful and smart banking officer."},
-                {"role": "user", "content": f"This is the search query: {query}, this is the content:{str(context)}  Make a detailed report taking into consideration all the fields and evaluate how creditworthy the customer is. Point out specific details about positives and negatives and how the customer can improve their credit score in order to make their financial journey smooth, tell whether the user is credit worthy or not."}
-            ],
-            max_tokens=4000
-        )
-
-        st.session_state.initial_response = response.choices[0].message.content
+        st.session_state.initial_response = response
         st.write(st.session_state.initial_response)
 
         # Add the initial interaction to Langchain memory
         st.session_state.conversation.predict(input=f"User: {query}\nAI: {st.session_state.initial_response}")
+
+
+
+
+
+
 
 # Display the initial response if it exists
 if st.session_state.initial_response:
