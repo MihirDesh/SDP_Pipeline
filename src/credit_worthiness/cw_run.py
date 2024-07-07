@@ -10,7 +10,7 @@ from openai import AzureOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
 from helpers.llm_helpers.gpt4o import gpt4o
-from helpers.llm_helpers.gpt4oinit import createlangchainllm
+from helpers.llm_helpers.langchaininit import createlangchainllm
 from helpers.vector_helpers.getembedding import get_embedding
 from helpers.input_helpers.speech import from_mic
 
