@@ -3,13 +3,12 @@ from azure.ai.formrecognizer import DocumentAnalysisClient
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents import SearchClient
-from azure.search.documents.models import VectorizedQuery
-import azure.cognitiveservices.speech as speechsdk
 import os
 from dotenv import load_dotenv
 load_dotenv()
 from azure.core.credentials import AzureKeyCredential
 from openai import AzureOpenAI
+from helpers.Azure_helpers.blobhelp import getdatafromblob,getbloblist,uploaddata
 from azure.search.documents.indexes.models import (
   
     SearchFieldDataType,
@@ -44,7 +43,7 @@ client = AzureOpenAI(
 
 blob_service_client = BlobServiceClient(account_url=f'https://{os.getenv("AZURE_STORAGE_ACCOUNT_NAME")}.blob.core.windows.net', credential=os.getenv("AZURE_STORAGE_ACCOUNT_KEY"))
 container_client = blob_service_client.get_container_client(container=os.getenv("CONTAINER_NAME"))
-blob_list = container_client.list_blobs()
+blob_list = getbloblist(os.getenv("CONTAINER_NAME"))
 
 
 
@@ -60,9 +59,7 @@ for blob in blob_list:
     if blob.name == 'llminputdata.json' or blob.name == "llminputdatafinal.json" or blob.name == 'customer_data.json':
         continue
     
-    blob_client = container_client.get_blob_client(blob.name)
-    downloaded_blob = blob_client.download_blob()
-    pdf_content = downloaded_blob.readall()
+    pdf_content = getdatafromblob(blob.name,os.getenv("CONTAINER_NAME"))
     poller = document_client.begin_analyze_document("prebuilt-document",pdf_content)
     result = poller.result()
     full_text = ""
@@ -72,14 +69,9 @@ for blob in blob_list:
     document_list.append(full_text)
 
 
-blob_client = container_client.get_blob_client('customer_data.json')
-downloaded_blob = blob_client.download_blob()
-data= downloaded_blob.readall()
-data = json.loads(data)
-# with open("./customer_data.json",'r') as f:
-#     data = json.load(f)
 
-    
+data = getdatafromblob('customer_data.json',os.getenv("CONTAINER_NAME"))
+data = json.loads(data)
 
 #mapped structured and unstructured data
 
@@ -330,19 +322,15 @@ for i, dataitem in enumerate(data):
     dataitem['service_log_sentiment_score_Vector'] = service_log_sentiment_score_embeddings[i]
     dataitem['document_text_Vector'] = document_texts_embeddings[i]
 
-# with open('./llminputdatafinal.json', "w+") as f:
-   
-#     json.dump(data, f)
+
 
 #indexing process
-new_blob_name = 'llminputdatafinal.json'
-new_blob_client = blob_service_client.get_blob_client(container=os.getenv("CONTAINER_NAME"), blob=new_blob_name)
+
 
 # Open the local file and upload its contents
 data_string = json.dumps(data)
-new_blob_client.upload_blob(data_string, overwrite=True)
+uploaddata('llminputdatafinal.json',os.getenv("CONTAINER_NAME"),data_string)
 
-print(f"File {new_blob_name} uploaded to Azure Blob Storage in container")
 
 #defining the vector search algorithm
 vector_search = VectorSearch(
@@ -370,10 +358,9 @@ print(f' {result.name} created')
 
 
 #getting the mapped and embedded data from the blob
-blob_client = container_client.get_blob_client('llminputdatafinal.json')
-blob_data = blob_client.download_blob()
 
-json_data = json.loads(blob_data.readall())
+prefinal_data = getdatafromblob('llminputdatafinal.json',os.getenv("CONTAINER_NAME"))
+json_data = json.loads(prefinal_data)
 
 #uploaded the documents to the vector store
 search_client = SearchClient(endpoint=os.getenv("service_endpoint"), index_name=index_name, credential=AzureKeyCredential(os.getenv("admin_key")))
