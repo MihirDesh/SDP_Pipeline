@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from azure.storage.blob import BlobServiceClient
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.indexes import SearchIndexClient
@@ -5,9 +7,6 @@ from azure.search.documents import SearchClient
 from azure.search.documents.models import VectorizedQuery
 import azure.cognitiveservices.speech as speechsdk
 import streamlit as st
-import os
-from dotenv import load_dotenv
-load_dotenv()
 from azure.core.credentials import AzureKeyCredential
 from openai import AzureOpenAI
 from langchain.memory import ConversationBufferMemory
@@ -15,7 +14,7 @@ from langchain.chains import ConversationChain
 from langchain.chat_models import AzureChatOpenAI
 
 
-
+load_dotenv()
 
 st.set_page_config(layout="wide")
 st.header("CREDISHIELD: THE CREDIT WORTHINESS COPILOT")
@@ -123,19 +122,21 @@ if query:
 
     with st.spinner("ANALYSING THE DATA AND GENERATING REPORT"):
        
-       
-
+      
+        
+        
         openai_client = AzureOpenAI(
             api_key=os.getenv("api_key"),
             api_version=os.getenv("api_version"),
-            base_url=os.getenv("azure_endpoint")
+            azure_endpoint=os.getenv("azure_endpoint")
+           
         )   
 
         response = openai_client.chat.completions.create(
             model=os.getenv("deployment_name"),
             messages=[
                 {"role": "system", "content": "You are a helpful and smart banking officer."},
-                {"role": "user", "content": f"This is the search query: {query}, this is the content:{context}  Make a detailed report taking into consideration all the fields and evaluate how creditworthy the customer is. Point out specific details about positives and negatives and how the customer can improve their credit score in order to make their financial journey smooth, tell whether the user is credit worthy or not."}
+                {"role": "user", "content": f"This is the search query: {query}, this is the content:{str(context)}  Make a detailed report taking into consideration all the fields and evaluate how creditworthy the customer is. Point out specific details about positives and negatives and how the customer can improve their credit score in order to make their financial journey smooth, tell whether the user is credit worthy or not."}
             ],
             max_tokens=4000
         )

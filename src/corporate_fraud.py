@@ -30,7 +30,7 @@ import json
 client = AzureOpenAI(
     azure_deployment=os.getenv("azure_openai_model_dep_name_em"),
     api_version=os.getenv("azure_openai_version_em"),
-    azure_endpoint=os.getenv("azure_openai_endpoint"),
+    azure_endpoint=os.getenv("ADA_ENDPOINT"),
     api_key=os.getenv("azure_openai_key"),
 )
 
@@ -244,13 +244,12 @@ except StopIteration:
     context = None
 
 if context:
-    # Integrating OpenAI
    
 
     client = AzureOpenAI(
         api_key = os.getenv("api_key"),
-        api_version = os.getenv("api_version"),
-        base_url = os.getenv("azure_endpoint")
+        api_version =os.getenv("api_version") ,
+        azure_endpoint=os.getenv("azure_endpoint")
     )
 
     response = client.chat.completions.create(
