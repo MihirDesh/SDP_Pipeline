@@ -1,6 +1,5 @@
 import os
 from dotenv import load_dotenv
-from azure.storage.blob import BlobServiceClient
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents import SearchClient
@@ -13,6 +12,7 @@ from helpers.llm_helpers.gpt4o import gpt4o
 from helpers.llm_helpers.langchaininit import createlangchainllm
 from helpers.vector_helpers.getembedding import get_embedding
 from helpers.input_helpers.speech import from_mic
+from helpers.Azure_helpers.blobhelp import getdatafromblob,getbloblist,uploaddata
 
 load_dotenv()
 
@@ -27,19 +27,17 @@ if 'conversation' not in st.session_state:
 if 'follow_up_response' not in st.session_state:
     st.session_state.follow_up_response = ""
 
+
+
 col1, col2 = st.columns(2)
 
-# ALL THE NECESSARY DATA AND KEYS AND NAMES AND ENDPOINTS......
 
-#Azure blob storage keys and endpoints:
 
-blob_service_client = BlobServiceClient(account_url=f'https://{os.getenv("AZURE_STORAGE_ACCOUNT_NAME")}.blob.core.windows.net', credential=os.getenv("AZURE_STORAGE_ACCOUNT_KEY"))
-container_client = blob_service_client.get_container_client(container=os.getenv("CONTAINER_NAME"))
-blob_list = container_client.list_blobs()
+blob_list = getbloblist(os.getenv("CONTAINER_NAME"))
 
-#AZURE AI SEARCH KEYS AND ENDPOINT
+
+
 index_name = os.getenv("index_name")
-
 search_client = SearchIndexClient(os.getenv("service_endpoint"), AzureKeyCredential(os.getenv("admin_key")))
 
 
@@ -56,6 +54,8 @@ client = AzureOpenAI(
 
 #MAIN CODE
 search_client = SearchClient(endpoint=os.getenv("service_endpoint"), index_name=index_name, credential=AzureKeyCredential(os.getenv("admin_key")))
+
+#fields to be searched
 fields_string = "cust_id_Vector, serious_dlqin2yrs_Vector, revolving_utilization_of_unsecured_lines_Vector, age_Vector, num_time_30_59_days_past_due_not_worse_Vector, debt_ratio_Vector"
 
 # Initialize Langchain components
@@ -75,7 +75,7 @@ query = ""
 
 if speech_bool:
     
-
+    st.write("Listening...")
     query = from_mic()
 else:
     with col2:
@@ -90,6 +90,7 @@ if query:
    
     content = get_embedding(query,fields_string,client)
 
+    
     select = [
         'CustomerID', 
         'CreditScore',
@@ -112,7 +113,7 @@ if query:
         response = gpt4o(prompt,4000,"banking client")
 
         st.session_state.initial_response = response
-        st.write(st.session_state.initial_response)
+        # st.write(st.session_state.initial_response)
 
         # Add the initial interaction to Langchain memory
         st.session_state.conversation.predict(input=f"User: {query}\nAI: {st.session_state.initial_response}")
@@ -134,7 +135,7 @@ follow_up = st.text_input("Follow-up question:", key="follow_up")
 if st.button("Ask Follow-up"):
     follow_up_response = st.session_state.conversation.predict(input=follow_up)
     st.session_state.follow_up_response = follow_up_response
-    st.experimental_rerun()
+    st.rerun()
 
 # Display the follow-up response if it exists
 if st.session_state.follow_up_response:

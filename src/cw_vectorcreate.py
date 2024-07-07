@@ -24,12 +24,12 @@ from azure.search.documents.indexes.models import (
     SearchIndex
 )
 import json
-#loading the environment variables
 
 
 
 
-#CLIENT FOR EMBEDDING
+
+#CLIENT FOR EMBEDDING - ADA-002
 client = AzureOpenAI(
     azure_deployment= os.getenv("azure_openai_model_dep_name_em"),
     api_version=os.getenv("azure_openai_version_em"),
@@ -38,21 +38,19 @@ client = AzureOpenAI(
    
 )
 
-#getting data from blob storage
 
 
-blob_service_client = BlobServiceClient(account_url=f'https://{os.getenv("AZURE_STORAGE_ACCOUNT_NAME")}.blob.core.windows.net', credential=os.getenv("AZURE_STORAGE_ACCOUNT_KEY"))
-container_client = blob_service_client.get_container_client(container=os.getenv("CONTAINER_NAME"))
+
+#getting the list of blobs from the container
 blob_list = getbloblist(os.getenv("CONTAINER_NAME"))
 
 
 
 #creating document intelligence instance
-
 document_client = DocumentAnalysisClient(os.getenv("doc_endpoint"),AzureKeyCredential(os.getenv("doc_apikey")))
 
-#creating a list of documents.
 
+#extracting the text from the documents in the blob
 document_list = []
 
 for blob in blob_list:
@@ -69,12 +67,13 @@ for blob in blob_list:
     document_list.append(full_text)
 
 
-
+#getting the structured data from the blob
 data = getdatafromblob('customer_data.json',os.getenv("CONTAINER_NAME"))
 data = json.loads(data)
 
-#mapped structured and unstructured data
 
+
+#mapped structured and unstructured data
 for i in range(1,11,1):
     for document in document_list:
         if f"CustomerID: {str(i)}" in document:
@@ -86,20 +85,18 @@ for i in range(1,11,1):
                     
 
                     
-# with open("./customer_data.json", 'w') as f:
-#     json.dump(data, f, indent=4) 
 
 
 
 
-#creating indexes
 
 
+#CREATING THE INDEX
 index_name = os.getenv("index_name")
 search_client = SearchIndexClient(os.getenv("service_endpoint"),AzureKeyCredential(os.getenv("admin_key")))
 
 
-
+#FIELD SCHEMA FOR THE DATA STORED IN THE INDEX
 fields = [
     SearchableField(name="CustomerID", type=SearchFieldDataType.String, key=True, sortable=True, filterable=True, facetable=True),
     SearchableField(name="SeriousDlqin2yrs", type=SearchFieldDataType.String, sortable=True, filterable=True, facetable=True),
@@ -164,7 +161,7 @@ fields = [
 ]
 
 
-
+#storing all the keys in their respective newly created arrays
 cust_ids = [str(dataitem['CustomerID']) for dataitem in data]
 serious_dlqin2yrs = [str(dataitem['SeriousDlqin2yrs']) for dataitem in data]
 revolving_utilization_of_unsecured_lines = [str(dataitem['RevolvingUtilizationOfUnsecuredLines']) for dataitem in data]
@@ -190,14 +187,13 @@ education_level_bachelor = [str(dataitem['EducationLevel_Bachelor_Degree']) for 
 education_level_high_school = [str(dataitem['EducationLevel_High_School']) for dataitem in data]
 education_level_master = [str(dataitem['EducationLevel_Master_Degree']) for dataitem in data]
 education_level_phd = [str(dataitem['EducationLevel_PhD']) for dataitem in data]
-customer_feedback = [dataitem['CustomerFeedback'] for dataitem in data]  # Assuming this is already a string
-customer_service_log = [dataitem['CustomerServiceLog'] for dataitem in data]  # Assuming this is already a string
+customer_feedback = [dataitem['CustomerFeedback'] for dataitem in data] 
+customer_service_log = [dataitem['CustomerServiceLog'] for dataitem in data]  
 feedback_sentiment_score = [str(dataitem['FeedbackSentimentScore']) for dataitem in data]
 service_log_sentiment_score = [str(dataitem['ServiceLogSentimentScore']) for dataitem in data]
 document_texts = [str(dataitem['document_text']) for dataitem in data]
 
-#creating the embeddings here
-
+#creating the embeddings for the keys using their respective arrays
 cust_ids_response = client.embeddings.create(input=cust_ids, model=os.getenv("azure_openai_em_name"))
 cust_id_embeddings = [item.embedding for item in cust_ids_response.data]
 
@@ -288,8 +284,8 @@ service_log_sentiment_score_embeddings = [item.embedding for item in service_log
 document_texts_response = client.embeddings.create(input=document_texts, model=os.getenv("azure_openai_em_name"))
 document_texts_embeddings = [item.embedding for item in document_texts_response.data]
 
-#adding the vectors to each data item in the data
 
+#for each data items in the mapped data, adding the respective embedded fields alongside their old fields
 for i, dataitem in enumerate(data):
     dataitem['cust_id_Vector'] = cust_id_embeddings[i]
     dataitem['serious_dlqin2yrs_Vector'] = serious_dlqin2yrs_embeddings[i]
@@ -324,10 +320,10 @@ for i, dataitem in enumerate(data):
 
 
 
-#indexing process
 
 
-# Open the local file and upload its contents
+
+#upload the final embedded and mapped data into the blob
 data_string = json.dumps(data)
 uploaddata('llminputdatafinal.json',os.getenv("CONTAINER_NAME"),data_string)
 
@@ -358,7 +354,6 @@ print(f' {result.name} created')
 
 
 #getting the mapped and embedded data from the blob
-
 prefinal_data = getdatafromblob('llminputdatafinal.json',os.getenv("CONTAINER_NAME"))
 json_data = json.loads(prefinal_data)
 
