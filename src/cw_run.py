@@ -8,11 +8,11 @@ from azure.core.credentials import AzureKeyCredential
 from openai import AzureOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
-from helpers.llm_helpers.gpt4o import gpt4o
 from helpers.llm_helpers.langchaininit import createlangchainllm
 from helpers.vector_helpers.getembedding import get_embedding
 from helpers.input_helpers.speech import from_mic
 from helpers.Azure_helpers.blobhelp import getdatafromblob,getbloblist,uploaddata
+from helpers.llm_helpers.gpt4o import gpt4oinit,gpt4oresponse
 
 load_dotenv()
 
@@ -110,7 +110,8 @@ if query:
       
         prompt = f"This is the search query: {query}, this is the content:{str(context)}  Make a detailed report taking into consideration all the fields and evaluate how creditworthy the customer is. Point out specific details about positives and negatives and how the customer can improve their credit score in order to make their financial journey smooth, tell whether the user is credit worthy or not."
         
-        response = gpt4o(prompt,4000,"banking client")
+        openaiclient = gpt4oinit()
+        response = gpt4oresponse(openaiclient,prompt,4000,"banking client")
 
         st.session_state.initial_response = response
         # st.write(st.session_state.initial_response)
@@ -118,7 +119,7 @@ if query:
         # Add the initial interaction to Langchain memory
         st.session_state.conversation.predict(input=f"User: {query}\nAI: {st.session_state.initial_response}")
 
-
+        
 
 
 
@@ -141,3 +142,6 @@ if st.button("Ask Follow-up"):
 if st.session_state.follow_up_response:
     st.write("Follow-up Response:")
     st.write(st.session_state.follow_up_response)
+
+
+
