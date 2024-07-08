@@ -8,7 +8,7 @@ from azure.core.credentials import AzureKeyCredential
 from openai import AzureOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
-from helpers.llm_helpers.langchaininit import createlangchainllm
+from helpers.llm_helpers.langchainhelpers import createlangchainllm
 from helpers.vector_helpers.getembedding import get_embedding
 from helpers.input_helpers.speech import from_mic
 from helpers.Azure_helpers.blobhelp import getdatafromblob,getbloblist,uploaddata
